@@ -1,0 +1,104 @@
+const app = Vue.createApp({
+    data(){
+        return{
+            bloco:{
+                inicio:true,
+                idade:false,
+                cambio:false,
+                diaSemana:false,
+                desconto:false
+            }, 
+            mensagem: {
+                idade : "Cálculo da idade a partir do ano de nascimento inserido pelo usuário",
+                cambio: "Cálculo do valor em reais a partir de um valor em dólar e cotação inserida pelo usuário",
+                diaSemana : "Exibir o dia da semana a partir de uma data inserida pelo usuário",
+                desconto : "Calcular  o  resultado  a  partir  de  um  valor  base  e  o percentual de desconto indicados pelo usuário"
+            },
+            textoInicial:'Olá, Seja Bem Vindo ao Nosso Sistema',
+            campoIdade:'',
+            resultado:'',
+            info:'',
+            dolar:'',
+            cotacao:'',
+            data:'',
+            statusTooltip: false, // pra verificar se o Tooltip
+            dolarOnline:'',//http://economia.awesomeapi.com.br/json/last/USD-BRL
+            cotacaoOnline:'' // Essa variável será um auxiliar
+
+        }
+    },
+    async mounted(){
+        const url = "https://economia.awesomeapi.com.br/json/last/USD-BRL"
+
+        try{
+            const resposta = await axios.get(url)
+            let dados = resposta.data
+            //console.log(dados.USDBRL.high)
+            this.cotacaoOnline = dados.USDBRL.high
+        } catch (error) {
+            console.log(`O seguinte erro ocorreu: ${error}`)
+        }
+    },
+    methods:{
+        verificarLink(classe){
+            //console.log(classe[1])
+            let itens = classe[1]// classe é um parâmetro que irá conter um vetor com as classes da tag na qual a função está sendo chamada.
+
+            // for..in permite percorrer um objeto
+            for(elementos in this.bloco){
+                //console.log(elementos)
+                if(itens == elementos){
+                    this.bloco[elementos] = true
+                    this.textoInicial = this.mensagem[elementos]
+                }
+                else{
+                    this.bloco[elementos] = false
+                }
+            }
+        },
+        calcularIdade(){
+            let anoAtual = new Date().getFullYear()// Estou pegando o ano atual
+            if(this.validarIdade()){
+                let resposta = anoAtual - this.campoIdade
+                //console.log(resposta)
+                this.resultado = `Você possui ${resposta} anos` 
+            }
+            
+        },
+        validarIdade(){
+            if(this.campoIdade < 1900 || this.campoIdade > 2050){
+                this.info = "Você precisa informar um valor entre 1900 e 2050"
+                this.resultado = ""// Irá retirar a mensagem do cálculo da idade
+                return false// Significa que o usuário inseriu um valor errado
+            }
+            else{
+               this.info=""
+                return true// Significa que o usuário inseriu um valor correto
+            }
+        },
+        converterDolar(){
+            let padrao = /^[0-9]+(\.([0-9]{2}))?$/ //Criando uma expressão regular
+            if(padrao.test(this.dolar) && padrao.test(this.cotacao)){
+                let resposta = this.dolar * this.cotacao
+                this.resultado = `U$${this.dolar} convertido para Real é R$${resposta}`
+                this.info=""// Retirando a mensagem de erro após informar resultado correto
+            }
+            else{
+                this.info = "Informe apenas números inteiros ou separados por ponto com 2 casas decimais"
+                this.resultado=""
+            }
+        },
+        trocarCotacao(){
+            //console.log(this.dolarOnline)
+            if(this.dolarOnline){
+                this.cotacao = Number(this.cotacaoOnline).toFixed(2)// Estamos coonvertendo texto para número para podermos utilizar a função toFixed()
+            }
+            else{
+                this.cotacao = ""
+            }
+
+        }
+    }
+})
+
+app.mount("#app")
